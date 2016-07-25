@@ -60,56 +60,47 @@
                                          (recur))
                                        (iasync/send! stream "" {:close? true}))))})))
 
+(defn async-request [url]
+  (let [hi-chan (async/chan 1024)]
+    (async/go (let [request (req/prepare-request :get url)]
+                (req/execute-request client request
+                                     :part (body-collect hi-chan)
+                                     :completed (body-completed hi-chan))))
+    hi-chan))
 
-(defn three-channel-app [url1 url2 url3]
+(defn piper-app [urls]
   (fn [request]
-    (let [request1 (req/prepare-request :get url1)
-          request2 (req/prepare-request :get url2)
-          request3 (req/prepare-request :get url3)
-          hi-chan1 (async/chan 1024)
-          hi-chan2 (async/chan 1024)
-          hi-chan3 (async/chan 1024)
-          in-chans [hi-chan1 hi-chan2 hi-chan3]
-          out-chan (async/chan 4096)]
+    (let [out-chan (async/chan 4096)]
 
       (iasync/as-channel request
                          {:on-open (fn [stream]
-                                     (async/go (req/execute-request client request1
-                                                                    :part (body-collect hi-chan1)
-                                                                    :completed (body-completed hi-chan1)))
+                                     (let [in-chans (for [url urls]
+                                                      (async-request url))]
 
-
-                                     (async/go (req/execute-request client request2
-                                                                    :part (body-collect hi-chan2)
-                                                                    :completed (body-completed hi-chan2)))
-
-                                     (async/go (req/execute-request client request3
-                                                                    :part (body-collect hi-chan3)
-                                                                    :completed (body-completed hi-chan3)))
-
-                                     (concat-chans in-chans out-chan)
-
-                                     (loop []
-                                       (if-some [chunk (async/<!! out-chan)]
-                                         (do
-                                           (iasync/send! stream chunk)
-                                           (recur))
-                                         (iasync/send! stream "" {:close? true}))))}))))
+                                       (concat-chans in-chans out-chan)
+                                       (loop []
+                                         (if-some [chunk (async/<!! out-chan)]
+                                           (do
+                                             (iasync/send! stream chunk)
+                                             (recur))
+                                           (iasync/send! stream "" {:close? true})))))}))))
 
 (defn sync-piper []
-  (three-channel-app "http://localhost:8083/fragment-1"
-                     "http://localhost:8083/fragment-2"
-                     "http://localhost:8083/fragment-3"))
+  (piper-app ["http://localhost:8083/fragment-1"
+              "http://localhost:8083/fragment-2"
+              "http://localhost:8083/fragment-3"
+              "http://localhost:8083/fragment-1"]))
 
 (defn async-piper []
-  (three-channel-app "http://localhost:8083/async-fragment-1"
-                     "http://localhost:8083/async-fragment-2"
-                     "http://localhost:8083/async-fragment-3"))
+  (piper-app ["http://localhost:8083/async-fragment-1"
+              "http://localhost:8083/async-fragment-2"
+              "http://localhost:8083/async-fragment-3"
+              "http://localhost:8083/async-fragment-1"]))
 
 (defn mixt-piper []
-  (three-channel-app "http://localhost:8083/fragment-1"
-                     "http://localhost:8083/async-fragment-2"
-                     "http://localhost:8083/fragment-3"))
+  (piper-app ["http://localhost:8083/fragment-1"
+              "http://localhost:8083/async-fragment-2"
+              "http://localhost:8083/fragment-3"]))
 
 (web/run (async-piper) :host "localhost" :port 8081 :path (str "/async-piper"))
 (web/run small-piper :host "localhost" :port 8081 :path (str "/small-piper"))

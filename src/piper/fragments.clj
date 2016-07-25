@@ -14,7 +14,7 @@
                                      (dotimes [msg num]
                                        (iasync/send! stream (str name " " msg " " bloat "\n")
                                                      {:close? (= msg (- num 1))})
-                                       ;(Thread/sleep 5)
+                                       (Thread/sleep 70)
                                        )))})))
 
 (defn- run-async-fragment [name num]
