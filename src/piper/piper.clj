@@ -53,12 +53,12 @@
                                                                   :part (body-collect out-chan)
                                                                   :completed (body-completed out-chan)))
 
-                                   (loop []
-                                     (if-some [chunk (async/<!! out-chan)]
+                                   (loop [current-chunk (async/<!! out-chan)]
+                                     (if-some [next-chunk (async/<!! out-chan)]
                                        (do
-                                         (iasync/send! stream chunk)
-                                         (recur))
-                                       (iasync/send! stream "" {:close? true}))))})))
+                                         (iasync/send! stream current-chunk)
+                                         (recur next-chunk))
+                                       (iasync/send! stream current-chunk {:close? true}))))})))
 
 (defn async-request [url]
   (let [hi-chan (async/chan 1024)]
@@ -78,18 +78,21 @@
                                                       (async-request url))]
 
                                        (concat-chans in-chans out-chan)
-                                       (loop []
-                                         (if-some [chunk (async/<!! out-chan)]
+                                       (loop [chunk (async/<!! out-chan)]
+                                         (if-some [next-chunk (async/<!! out-chan)]
                                            (do
                                              (iasync/send! stream chunk)
-                                             (recur))
-                                           (iasync/send! stream "" {:close? true})))))}))))
+                                             (recur next-chunk))
+                                           (iasync/send! stream chunk {:close? true})))))}))))
 
 (defn sync-piper []
   (piper-app ["http://localhost:8083/fragment-1"
               "http://localhost:8083/fragment-2"
               "http://localhost:8083/fragment-3"
-              "http://localhost:8083/fragment-1"]))
+              "http://localhost:8083/fragment-1"
+              "http://localhost:8083/fragment-2"
+              "http://localhost:8083/fragment-3"
+              ]))
 
 (defn async-piper []
   (piper-app ["http://localhost:8083/async-fragment-1"
