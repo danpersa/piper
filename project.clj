@@ -8,7 +8,7 @@
                  [org.immutant/web         "2.1.5"]
                  [clj-http                 "3.1.0"]
                  [http.async.client        "1.1.0"]
-                 [cc.qbits/jet             "0.7.9"]]
+                 [instaparse               "1.4.2"]]
   :main ^:skip-aot piper.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

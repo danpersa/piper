@@ -36,4 +36,3 @@
   (run-fragment "fragment-1")
   (run-fragment "fragment-2")
   (run-fragment "fragment-3"))
-

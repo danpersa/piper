@@ -1,10 +1,6 @@
 (ns piper.piper
   (:require
-    [clj-http.client :as client]
     [clojure.core.async :as async]
-    [clojure.java.io :as io]
-    [clojure.string :as str]
-    [qbits.jet.client.http :as http]
     [http.async.client :as ac]
     [http.async.client.request :as req]
     [immutant.web.async :as iasync]
