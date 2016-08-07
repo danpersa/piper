@@ -1,13 +1,16 @@
-(ns piper.template
-  (:require [clojure.xml :as xml]
-            [instaparse.core :as insta])
-  (:import (java.io ByteArrayInputStream)))
+(ns piper.templatei
+  (:require [instaparse.core :as in]
+            [instaparse.transform :as tr]
+            [clojure.core.match :refer [match]]
+            [defun :refer [defun fun]]
+            [clojure.string :as str]))
 
 (def template "<html>
   <head>
-    <script type=\"fragment\" src=\"http://assets.domain.com\"></script>
+    <script type=\"fragment\" src=\"http://assets.domain.com\" attr></script>
   </head>
   <body>
+    <slot name=\"body-start\"></slot>
     <fragment src=\"http://header.domain.com\"></fragment>
     <fragment src=\"http://content.domain.com\" primary></fragment>
     <fragment src=\"http://footer.domain.com\" async></fragment>
@@ -44,10 +47,7 @@
   </body>
 </html>")
 
-(xml/parse (ByteArrayInputStream. (.getBytes template)))
-
-
-(def parser (insta/parser
+(def parser (in/parser
               "
               tags             = (tag | close-tag | closed-tag | text)*
               close-tag        = <'</'> name <'>'>
@@ -61,7 +61,27 @@
               name             = #'[a-zA-Z0-9!-]+'
               text             = #'[^<]*'
               "
-              :auto-whitespace :standard))
+              :auto-whitespace :standard
+              :output-format :hiccup))
+
+(defrecord Fragment [src primary? async? fallback-src])
+
+(defun arg-to-string
+       ([{:name name :value nil}] name)
+       ([{:name name :value value}] (str name "=\"" value "\"")))
+
+(defn args-to-string [args]
+  (->> args
+       (map (fn [arg] (arg-to-string arg)))
+       (str/join " ")))
+
+(defn add-leading-space [s]
+  (if (empty? s)
+    s
+    (str " " s)))
+
+(def args [{:name "n1" :value "v1"} {:name "n3" :value nil} {:name "n2" :value "v2"}])
+(args-to-string args)
 
 (comment
   (parser "<hello>")
@@ -69,4 +89,40 @@
   (parser "<hello src=\"hello\">")
   (parser "<hello>world >>> xx bb</hello>")
   (parser template)
-  (parser template-1))
+  (parser template-1)
+  (let [nodes (tr/transform {:tags           (fun ([& rest] rest))
+                             :close-tag      (fun
+                                               ([[:name "fragment"]]
+                                                 nil)
+                                               ([[:name close-tag-name]]
+                                                 [:text (str "</" close-tag-name ">")]))
+                             :arg            (fn [arg] arg)
+                             :arg-with-value (fun ([[:name name] [:arg-value arg-value]] {:name  name
+                                                                                          :value arg-value}))
+                             :arg-no-value   (fun ([[:name name]] {:name  name
+                                                                   :value nil}))
+                             :tag            (fun ([[:name "slot"] & args] {:slot (into {} args)})
+                                                  ([[:name "fragment"] & args] {:fragment (into {} args)})
+                                                  ([[:name tag-name] & args]
+                                                    [:text (str "<" tag-name (add-leading-space
+                                                                               (args-to-string args)) ">")]))
+                             :closed-tag     (fun ([[:name "slot"] & args] {:slot (into {} args)})
+                                                  ([[:name "fragment"] & args] {:fragment (into {} args)})
+                                                  ([[:name tag-name] & args]
+                                                    [:text (str "<" tag-name (add-leading-space
+                                                                               (args-to-string args)) "/>")]))
+                             }
+                            (parser template-1))]
+
+    (reduce (fn [result next]
+              (let [last (last result)]
+                (match [last next]
+                       [[:text t1] [:text t2]] (conj (vec (drop-last result)) [:text (str t1 t2)])
+                       [last nil] result
+                       [last next] (conj result next))
+                ))
+            []
+            nodes)
+    ))
+
+(last [])
