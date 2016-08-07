@@ -95,28 +95,29 @@
                                                 ([[:name "fragment"]]
                                                   nil)
                                                 ([[:name close-tag-name]]
-                                                  [:text (str "</" close-tag-name ">")]))
+                                                  {:text (str "</" close-tag-name ">")}))
+                             :text            (fn [text] {:text text})
                              :attr            (fn [attr] attr)
                              :attr-with-value (fun ([[:name name] [:attr-value attr-value]] {:name  name
                                                                                              :value attr-value}))
                              :attr-no-value   (fun ([[:name name]] {:name  name
                                                                     :value nil}))
                              :tag             (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
-                                                   ([[:name "fragment"] & attrs] {:fragment (into {} attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment attrs})
                                                    ([[:name tag-name] & attrs]
-                                                     [:text (str "<" tag-name (add-leading-space
-                                                                                (attrs-to-string attrs)) ">")]))
+                                                     {:text (str "<" tag-name (add-leading-space
+                                                                                (attrs-to-string attrs)) ">")}))
                              :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
-                                                   ([[:name "fragment"] & attrs] {:fragment (into {} attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment attrs})
                                                    ([[:name tag-name] & attrs]
-                                                     [:text (str "<" tag-name (add-leading-space
-                                                                                (attrs-to-string attrs)) "/>")]))}
-                            (parser template-1))]
+                                                     {:text (str "<" tag-name (add-leading-space
+                                                                                (attrs-to-string attrs)) "/>")}))}
+                            (parser template))]
 
     (reduce (fn [result next]
               (let [last (last result)]
                 (match [last next]
-                       [[:text t1] [:text t2]] (conj (vec (drop-last result)) [:text (str t1 t2)])
+                       [{:text t1} {:text t2}] (conj (vec (drop-last result)) {:text (str t1 t2)})
                        [last nil] result
                        [last next] (conj result next))))
             []
