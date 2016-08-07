@@ -51,12 +51,12 @@
               "
               tags             = (tag | close-tag | closed-tag | text)*
               close-tag        = <'</'> name <'>'>
-              closed-tag       = <'<'> name arg* <'/>'>
-              tag              = <'<'> name arg* <'>'>
-              arg              = arg-with-value | arg-no-value
-              arg-with-value   = name <'='> arg-value
-              arg-no-value     = name
-              arg-value        = <quote> #'[^\"]*' <quote>
+              closed-tag       = <'<'> name attr* <'/>'>
+              tag              = <'<'> name attr* <'>'>
+              attr              = attr-with-value | attr-no-value
+              attr-with-value   = name <'='> attr-value
+              attr-no-value     = name
+              attr-value        = <quote> #'[^\"]*' <quote>
               quote            = #'\"'
               name             = #'[a-zA-Z0-9!-]+'
               text             = #'[^<]*'
@@ -66,13 +66,13 @@
 
 (defrecord Fragment [src primary? async? fallback-src])
 
-(defun arg-to-string
+(defun attr-to-string
        ([{:name name :value nil}] name)
        ([{:name name :value value}] (str name "=\"" value "\"")))
 
-(defn args-to-string [args]
-  (->> args
-       (map (fn [arg] (arg-to-string arg)))
+(defn attrs-to-string [attrs]
+  (->> attrs
+       (map (fn [attr] (attr-to-string attr)))
        (str/join " ")))
 
 (defn add-leading-space [s]
@@ -80,8 +80,8 @@
     s
     (str " " s)))
 
-(def args [{:name "n1" :value "v1"} {:name "n3" :value nil} {:name "n2" :value "v2"}])
-(args-to-string args)
+(def attrs [{:name "n1" :value "v1"} {:name "n3" :value nil} {:name "n2" :value "v2"}])
+(attrs-to-string attrs)
 
 (comment
   (parser "<hello>")
@@ -90,27 +90,27 @@
   (parser "<hello>world >>> xx bb</hello>")
   (parser template)
   (parser template-1)
-  (let [nodes (tr/transform {:tags           (fun ([& rest] rest))
-                             :close-tag      (fun
-                                               ([[:name "fragment"]]
-                                                 nil)
-                                               ([[:name close-tag-name]]
-                                                 [:text (str "</" close-tag-name ">")]))
-                             :arg            (fn [arg] arg)
-                             :arg-with-value (fun ([[:name name] [:arg-value arg-value]] {:name  name
-                                                                                          :value arg-value}))
-                             :arg-no-value   (fun ([[:name name]] {:name  name
-                                                                   :value nil}))
-                             :tag            (fun ([[:name "slot"] & args] {:slot (into {} args)})
-                                                  ([[:name "fragment"] & args] {:fragment (into {} args)})
-                                                  ([[:name tag-name] & args]
-                                                    [:text (str "<" tag-name (add-leading-space
-                                                                               (args-to-string args)) ">")]))
-                             :closed-tag     (fun ([[:name "slot"] & args] {:slot (into {} args)})
-                                                  ([[:name "fragment"] & args] {:fragment (into {} args)})
-                                                  ([[:name tag-name] & args]
-                                                    [:text (str "<" tag-name (add-leading-space
-                                                                               (args-to-string args)) "/>")]))
+  (let [nodes (tr/transform {:tags            (fun ([& rest] rest))
+                             :close-tag       (fun
+                                                ([[:name "fragment"]]
+                                                  nil)
+                                                ([[:name close-tag-name]]
+                                                  [:text (str "</" close-tag-name ">")]))
+                             :attr            (fn [attr] attr)
+                             :attr-with-value (fun ([[:name name] [:attr-value attr-value]] {:name  name
+                                                                                             :value attr-value}))
+                             :attr-no-value   (fun ([[:name name]] {:name  name
+                                                                    :value nil}))
+                             :tag             (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment (into {} attrs)})
+                                                   ([[:name tag-name] & attrs]
+                                                     [:text (str "<" tag-name (add-leading-space
+                                                                                (attrs-to-string attrs)) ">")]))
+                             :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment (into {} attrs)})
+                                                   ([[:name tag-name] & attrs]
+                                                     [:text (str "<" tag-name (add-leading-space
+                                                                                (attrs-to-string attrs)) "/>")]))
                              }
                             (parser template-1))]
 
