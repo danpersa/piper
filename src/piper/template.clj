@@ -110,8 +110,7 @@
                                                    ([[:name "fragment"] & attrs] {:fragment (into {} attrs)})
                                                    ([[:name tag-name] & attrs]
                                                      [:text (str "<" tag-name (add-leading-space
-                                                                                (attrs-to-string attrs)) "/>")]))
-                             }
+                                                                                (attrs-to-string attrs)) "/>")]))}
                             (parser template-1))]
 
     (reduce (fn [result next]
@@ -119,10 +118,6 @@
                 (match [last next]
                        [[:text t1] [:text t2]] (conj (vec (drop-last result)) [:text (str t1 t2)])
                        [last nil] result
-                       [last next] (conj result next))
-                ))
+                       [last next] (conj result next))))
             []
-            nodes)
-    ))
-
-(last [])
+            nodes)))
