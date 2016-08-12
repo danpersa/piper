@@ -2,20 +2,11 @@
   (:require [instaparse.core :as in]
             [instaparse.transform :as tr]
             [clojure.core.match :refer [match]]
+            [piper.files :as fs]
             [defun :refer [defun fun]]
             [clojure.string :as str]))
 
-(def template "<html>
-  <head>
-    <script type=\"fragment\" src=\"http://assets.domain.com\" attr></script>
-  </head>
-  <body>
-    <slot name=\"body-start\"></slot>
-    <fragment src=\"http://localhost:8083/fragment-1\"></fragment>
-    <fragment src=\"http://localhost:8083/fragment-2\" primary></fragment>
-    <fragment src=\"http://localhost:8083/fragment-3\" async></fragment>
-  </body>
-</html>")
+(def template (fs/classpath-file-as-str "template-1.html"))
 
 (def parser (in/parser
               "

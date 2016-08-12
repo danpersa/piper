@@ -6,7 +6,8 @@
     [immutant.web.async :as iasync]
     [immutant.web :as web]
     [piper.client :as cl]
-    [piper.chans :as ch]))
+    [piper.chans :as ch]
+    [piper.files :as fs]))
 
 
 (defn small-piper [request]
@@ -86,48 +87,9 @@
 (web/run (sync-piper) :host "localhost" :port 8081 :path (str "/piper"))
 (web/run (mixt-piper) :host "localhost" :port 8081 :path (str "/mixt-piper"))
 
-(let [template "<html>
-  <head>
-    <script type=\"fragment\" src=\"http://assets.domain.com\" attr></script>
-  </head>
-  <body>
-    <slot name=\"body-start\"></slot>
-    <fragment src=\"http://localhost:8083/fragment-1\"></fragment>
-    <fragment src=\"http://localhost:8083/fragment-2\" primary></fragment>
-    <fragment src=\"http://localhost:8083/fragment-3\" async></fragment>
-    <fragment src=\"http://localhost:8083/fragment-1\" async></fragment>
-  </body>
-</html>"] (web/run (piper-app template)
-                   :host "localhost" :port 8081 :path (str "/template-0")))
-
-
-(let [template "<!doctype html>
-<html>
-  <head>
-    <meta charset=\"utf-8\">
-    <link href=\"data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=\" rel=\"icon\" type=\"image/x-icon\" />
-    <script type=\"slot\" name=\"head\"></script>
-    <script>
-    define('word', function () {
-                                // Example dependency for the fragments
-                                return 'initialised';
-                                });
-    </script>
-  </head>
-  <body>
-    <slot name=\"body-start\"></slot>
-    <div>
-      <script>
-        // this tests that the pipe functionality may
-        // not be broken by script after the placeholder scripts
-        document.body.appendChild(document.createElement('script'));
-      </script>
-      <h2>Fragment 1:</h2>
-      <fragment src=\"http://localhost:8083/fragment-1\" primary fallback-src=\"http://localhost:8081\"></fragment>
-      <h2>Fragment 2:</h2>
-      <fragment async src=\"http://localhost:8083/fragment-2\"></fragment>
-      <div>All done!</div>
-    </div>
-  </body>
-</html>"] (web/run (piper-app template)
+(let [template (fs/classpath-file-as-str "template-1.html")] (web/run (piper-app template)
                    :host "localhost" :port 8081 :path (str "/template-1")))
+
+
+(let [template (fs/classpath-file-as-str "template-2.html")] (web/run (piper-app template)
+                   :host "localhost" :port 8081 :path (str "/template-2")))
