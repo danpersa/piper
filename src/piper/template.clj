@@ -1,4 +1,4 @@
-(ns piper.templatei
+(ns piper.template
   (:require [instaparse.core :as in]
             [instaparse.transform :as tr]
             [clojure.core.match :refer [match]]
@@ -11,39 +11,9 @@
   </head>
   <body>
     <slot name=\"body-start\"></slot>
-    <fragment src=\"http://header.domain.com\"></fragment>
-    <fragment src=\"http://content.domain.com\" primary></fragment>
-    <fragment src=\"http://footer.domain.com\" async></fragment>
-  </body>
-</html>")
-
-(def template-1 "<!doctype html>
-<html>
-  <head>
-    <meta charset=\"utf-8\">
-    <link href=\"data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=\" rel=\"icon\" type=\"image/x-icon\" />
-    <script type=\"slot\" name=\"head\"></script>
-    <script>
-    define('word', function () {
-                                // Example dependency for the fragments
-                                return 'initialised';
-                                });
-    </script>
-  </head>
-  <body>
-    <slot name=\"body-start\"></slot>
-    <div>
-      <script>
-        // this tests that the pipe functionality may
-        // not be broken by script after the placeholder scripts
-        document.body.appendChild(document.createElement('script'));
-      </script>
-      <h2>Fragment 1:</h2>
-      <fragment src=\"http://localhost:8088\" primary fallback-src=\"http://localhost:8081\"></fragment>
-      <h2>Fragment 2:</h2>
-      <fragment async src=\"http://localhost:8082\"></fragment>
-      <div>All done!</div>
-    </div>
+    <fragment src=\"http://localhost:8083/fragment-1\"></fragment>
+    <fragment src=\"http://localhost:8083/fragment-2\" primary></fragment>
+    <fragment src=\"http://localhost:8083/fragment-3\" async></fragment>
   </body>
 </html>")
 
@@ -64,8 +34,6 @@
               :auto-whitespace :standard
               :output-format :hiccup))
 
-(defrecord Fragment [src primary? async? fallback-src])
-
 (defun attr-to-string
        ([{:name name :value nil}] name)
        ([{:name name :value value}] (str name "=\"" value "\"")))
@@ -75,24 +43,34 @@
        (map (fn [attr] (attr-to-string attr)))
        (str/join " ")))
 
+(into {} [[:a 1] [:b 3]])
+
+(defn attrs-to-map [attrs]
+  (->> (map (fn [attr] [(keyword (:name attr)) (:value attr)]) attrs)
+       (into {})))
+
 (defn add-leading-space [s]
   (if (empty? s)
     s
     (str " " s)))
 
+(defn assoc-id [attrs id]
+  (assoc attrs :id id))
+
 (def attrs [{:name "n1" :value "v1"} {:name "n3" :value nil} {:name "n2" :value "v2"}])
 (attrs-to-string attrs)
+(attrs-to-map attrs)
 
-(comment
-  (parser "<hello>")
-  (parser "<hello src=\"hello\"/>")
-  (parser "<hello src=\"hello\">")
-  (parser "<hello>world >>> xx bb</hello>")
-  (parser template)
-  (parser template-1)
-  (let [nodes (tr/transform {:tags            (fun ([& rest] rest))
+(assoc-id (attrs-to-map attrs) 2)
+
+
+(defn parse-template
+  "Takes an html template as a parameter. Returns the AST."
+  [template]
+  (let [id (atom 0)
+        nodes (tr/transform {:tags            (fun ([& rest] rest))
                              :close-tag       (fun
-                                                ([[:name "fragment"]]
+                                                ([[:name (:or "fragment" "slot")]]
                                                   nil)
                                                 ([[:name close-tag-name]]
                                                   {:text (str "</" close-tag-name ">")}))
@@ -102,13 +80,13 @@
                                                                                              :value attr-value}))
                              :attr-no-value   (fun ([[:name name]] {:name  name
                                                                     :value nil}))
-                             :tag             (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
-                                                   ([[:name "fragment"] & attrs] {:fragment attrs})
+                             :tag             (fun ([[:name "slot"] & attrs] {:slot (attrs-to-map attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs-to-map attrs) (swap! id inc))})
                                                    ([[:name tag-name] & attrs]
                                                      {:text (str "<" tag-name (add-leading-space
                                                                                 (attrs-to-string attrs)) ">")}))
-                             :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (into {} attrs)})
-                                                   ([[:name "fragment"] & attrs] {:fragment attrs})
+                             :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (attrs-to-map attrs)})
+                                                   ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs-to-map attrs) (swap! id inc))})
                                                    ([[:name tag-name] & attrs]
                                                      {:text (str "<" tag-name (add-leading-space
                                                                                 (attrs-to-string attrs)) "/>")}))}
@@ -122,3 +100,34 @@
                        [last next] (conj result next))))
             []
             nodes)))
+
+(defn fragment-nodes
+  "Takes the AST as a parameter. Returns only the fragment nodes"
+  [ast]
+  (filter #(some? (%1 :fragment)) ast))
+
+(defn select-primary
+  "Takes a list of fragment nodes. Returns a map with the primary fragment and the other fragments."
+  [fragment-nodes]
+  (loop [nodes fragment-nodes
+         result {:fragments []}]
+    (if-some [fragment-node (:fragment (first nodes))]
+      (let [new-result (match fragment-node
+                              {:primary _} (assoc result :primary fragment-node)
+                              :else (assoc result :fragments (conj (result :fragments) fragment-node)))]
+        ;(println "new result " new-result)
+        (recur (rest nodes) new-result))
+      result)))
+
+
+(comment
+  (parser "<hello>")
+  (parser "<hello src=\"hello\"/>")
+  (parser "<hello src=\"hello\">")
+  (parser "<hello>world >>> xx bb</hello>")
+  (parser template)
+  (select-primary (fragment-nodes (parse-template template)))
+
+
+  (render-channels (ast-to-channels (parse-template template))))
+
