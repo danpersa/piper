@@ -10,7 +10,8 @@
                  [http.async.client        "1.1.0"]
                  [instaparse               "1.4.2"]
                  [org.clojure/core.match   "0.3.0-alpha4"]
-                 [defun                    "0.3.0-alapha"]]
+                 [defun                    "0.3.0-alapha"]
+                 [org.clojure/tools.logging "0.3.1"]]
   :main ^:skip-aot piper.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

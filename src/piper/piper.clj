@@ -36,7 +36,7 @@
       (iasync/as-channel request
                          {:on-open (fn [stream]
                                      (let [in-chans (for [url urls]
-                                                      (cl/async-request url))]
+                                                      ((cl/async-request url) :body-chan))]
 
                                        (ch/concat-chans in-chans out-chan)
                                        (loop [chunk (async/<!! out-chan)]
@@ -50,21 +50,24 @@
   (let [parsed-template (tp/parse-template template)
         primary-fragments (tp/select-primary (tp/fragment-nodes parsed-template))]
 
+
     (fn [request]
-      (let [out-chan (async/chan 4096)]
+      (if-some [fragment-chans (cl/call-fragments primary-fragments)]
+        (let [out-chan (async/chan 4096)]
+          (iasync/as-channel request
+                             {:on-open (fn [stream]
+                                         (let [ast-chans (ch/ast-to-channels parsed-template fragment-chans)]
 
-        (iasync/as-channel request
-                           {:on-open (fn [stream]
-                                       (let [fragment-chans (cl/call-fragments primary-fragments)
-                                             ast-chans (ch/ast-to-channels parsed-template fragment-chans)]
-
-                                         (ch/concat-chans ast-chans out-chan)
-                                         (loop [chunk (async/<!! out-chan)]
-                                           (if-some [next-chunk (async/<!! out-chan)]
-                                             (do
-                                               (iasync/send! stream chunk)
-                                               (recur next-chunk))
-                                             (iasync/send! stream chunk {:close? true})))))})))))
+                                           (ch/concat-chans ast-chans out-chan)
+                                           (loop [chunk (async/<!! out-chan)]
+                                             (if-some [next-chunk (async/<!! out-chan)]
+                                               (do
+                                                 (iasync/send! stream chunk)
+                                                 (recur next-chunk))
+                                               (iasync/send! stream chunk {:close? true})))))}))
+        {:status 500
+         :body   "There was a 500 from primary"}))
+    ))
 
 (defn sync-piper []
   (piper-concat-app ["http://localhost:8083/fragment-1"
@@ -87,9 +90,15 @@
 (web/run (sync-piper) :host "localhost" :port 8081 :path (str "/piper"))
 (web/run (mixt-piper) :host "localhost" :port 8081 :path (str "/mixt-piper"))
 
-(let [template (fs/classpath-file-as-str "template-1.html")] (web/run (piper-app template)
-                   :host "localhost" :port 8081 :path (str "/template-1")))
+(let [template (fs/classpath-file-as-str "template-1.html")]
+  (web/run (piper-app template)
+           :host "localhost" :port 8081 :path (str "/template-1")))
 
 
-(let [template (fs/classpath-file-as-str "template-2.html")] (web/run (piper-app template)
-                   :host "localhost" :port 8081 :path (str "/template-2")))
+(let [template (fs/classpath-file-as-str "template-2.html")]
+  (web/run (piper-app template)
+           :host "localhost" :port 8081 :path (str "/template-2")))
+
+(let [template (fs/classpath-file-as-str "template-500.html")]
+  (web/run (piper-app template)
+           :host "localhost" :port 8081 :path (str "/template-500")))

@@ -25,10 +25,22 @@
     {:status 200
      :body   (str "Hello world and " name "\n")}))
 
+(defn- error-fragment [request]
+  {:status 500
+   :body   "Hello world 500\n"})
+
+(defn- error-sleep-fragment [request]
+  (Thread/sleep 1000)
+  (error-fragment request))
+
 (defn- run-fragment [name]
   (web/run (fragment name) :host "localhost" :port 8083 :path (str "/" name)))
 
+
+
 (defn start-fragments []
+  (web/run error-fragment :host "localhost" :port 8083 :path (str "/error"))
+  (web/run error-sleep-fragment :host "localhost" :port 8083 :path (str "/error-sleep"))
   (run-async-fragment "async-fragment-1" 10)
   (run-async-fragment "async-fragment-2" 15)
   (run-async-fragment "async-fragment-3" 20)
