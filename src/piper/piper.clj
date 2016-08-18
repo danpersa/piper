@@ -66,8 +66,7 @@
                                                  (recur next-chunk))
                                                (iasync/send! stream chunk {:close? true})))))}))
         {:status 500
-         :body   "There was a 500 from primary"}))
-    ))
+         :body   "There was a 500 from primary"}))))
 
 (defn sync-piper []
   (piper-concat-app ["http://localhost:8083/fragment-1"

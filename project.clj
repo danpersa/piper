@@ -18,6 +18,7 @@
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev"]
+                   :resource-paths ["test/resources"]
                    :plugins      [[lein-midje                           "3.2"]
                                   [org.clojars.punkisdead/lein-cucumber "1.0.7"]]
                    :dependencies [[org.clojure/tools.namespace "0.2.11"]

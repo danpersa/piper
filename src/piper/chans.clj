@@ -2,7 +2,8 @@
   (:require [clojure.core.async :as async]
             [clojure.core.match :refer [match]]
             [piper.template :as tp]
-            [piper.client :as cl]))
+            [piper.client :as cl]
+            [piper.files :as fs]))
 
 (defn concat-chans [in-chans out-chan]
   (async/go
@@ -50,7 +51,8 @@
 
 
 (comment
-  (let [parsed-template (tp/parse-template tp/template)
+  (let [template (fs/classpath-file-as-str "template-1.html")
+        parsed-template (tp/parse-template template)
         primary-fragments (tp/select-primary (tp/fragment-nodes parsed-template))
         fragment-chans (cl/call-fragments primary-fragments)
         render-channels (render-channels (ast-to-channels parsed-template fragment-chans))]
