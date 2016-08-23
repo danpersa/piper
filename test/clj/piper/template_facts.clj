@@ -27,15 +27,16 @@
 (def ^:private template (fs/classpath-file-as-str
                           "templates/simple-template.html"))
 
-(facts "parse-template"
-       (parse-template template) =>
-       [{:text "<html>\n<body>\n<div>Hello</div>\n"}
-        {:slot {:name "body-start"}}
-        {:text "\n"}
-        {:fragment {:src "http://localhost:8083/fragment-2", :primary nil, :id 1}}
-        {:text "\n</body>\n</html>"}])
+(def ^:private ast [{:text "<html>\n<body>\n<div>Hello</div>\n"}
+                    {:fragment {:src "http://localhost:8083/fragment-1" :id 1}}
+                    {:text "\n"}
+                    {:slot {:name "body-start"}}
+                    {:text "\n"}
+                    {:fragment {:src "http://localhost:8083/fragment-2" :primary nil :id 2}}
+                    {:text "\n</body>\n</html>"}])
 
-;(def ^:private attrs [{:name "n1" :value "v1"} {:name "n3" :value nil} {:name "n2" :value "v2"}])
+(facts "parse-template"
+       (parse-template template) => ast)
 
 (facts "attr->string"
        (attr->string {:name "n1" :value "v1"}) => "n1=\"v1\""
@@ -55,3 +56,14 @@
 
 (facts "assoc-id"
        (assoc-id {:a1 1} 2) => {:a1 1 :id 2})
+
+(def ^:private primary-fragments [{:fragment {:id 1 :src "http://localhost:8083/fragment-1"}}
+                                  {:fragment {:id 2 :primary nil :src "http://localhost:8083/fragment-2"}}])
+
+(facts "fragment-nodes"
+       (fragment-nodes ast) => primary-fragments)
+
+(facts "select-primary"
+       (select-primary primary-fragments) =>
+       {:primary   {:id 2 :primary nil :src "http://localhost:8083/fragment-2"}
+        :fragments [{:id 1 :src "http://localhost:8083/fragment-1"}]})

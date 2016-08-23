@@ -47,30 +47,32 @@
   "Takes an html template as a parameter. Returns the AST."
   [template]
   (let [id (atom 0)
-        nodes (tr/transform
-                {:tags            (fun ([& rest] rest))
-                 :close-tag       (fun
-                                    ([[:name (:or "fragment" "slot")]]
-                                      nil)
-                                    ([[:name close-tag-name]]
-                                      {:text (str "</" close-tag-name ">")}))
-                 :text            (fn [text] {:text text})
-                 :attr            (fn [attr] attr)
-                 :attr-with-value (fun ([[:name name] [:attr-value attr-value]] {:name  name
-                                                                                 :value attr-value}))
-                 :attr-no-value   (fun ([[:name name]] {:name  name
-                                                        :value nil}))
-                 :tag             (fun ([[:name "slot"] & attrs] {:slot (attrs->map attrs)})
-                                       ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs->map attrs) (swap! id inc))})
-                                       ([[:name tag-name] & attrs]
-                                         {:text (str "<" tag-name (prepend-space
-                                                                    (attrs->string attrs)) ">")}))
-                 :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (attrs->map attrs)})
-                                       ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs->map attrs) (swap! id inc))})
-                                       ([[:name tag-name] & attrs]
-                                         {:text (str "<" tag-name (prepend-space
-                                                                    (attrs->string attrs)) "/>")}))}
-                (parser template))]
+        nodes
+        (->> template
+             parser
+             (tr/transform
+               {:tags            (fun ([& rest] rest))
+                :close-tag       (fun
+                                   ([[:name (:or "fragment" "slot")]]
+                                     nil)
+                                   ([[:name close-tag-name]]
+                                     {:text (str "</" close-tag-name ">")}))
+                :text            (fn [text] {:text text})
+                :attr            (fn [attr] attr)
+                :attr-with-value (fun ([[:name name] [:attr-value attr-value]] {:name  name
+                                                                                :value attr-value}))
+                :attr-no-value   (fun ([[:name name]] {:name  name
+                                                       :value nil}))
+                :tag             (fun ([[:name "slot"] & attrs] {:slot (attrs->map attrs)})
+                                      ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs->map attrs) (swap! id inc))})
+                                      ([[:name tag-name] & attrs]
+                                        {:text (str "<" tag-name (prepend-space
+                                                                   (attrs->string attrs)) ">")}))
+                :closed-tag      (fun ([[:name "slot"] & attrs] {:slot (attrs->map attrs)})
+                                      ([[:name "fragment"] & attrs] {:fragment (assoc-id (attrs->map attrs) (swap! id inc))})
+                                      ([[:name tag-name] & attrs]
+                                        {:text (str "<" tag-name (prepend-space
+                                                                   (attrs->string attrs)) "/>")}))}))]
 
     (reduce (fn [result next]
               (let [last (last result)]
