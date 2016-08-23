@@ -3,7 +3,9 @@
     [immutant.web :as web]
     [immutant.web.async :as iasync]))
 
-(def bloat (str (range 0 5)))
+(def ^:private localhost "localhost")
+
+(def ^:private bloat (str (range 0 5)))
 
 (defn- async-fragment [name num]
   (fn [request]
@@ -14,11 +16,10 @@
                                      (dotimes [msg num]
                                        (iasync/send! stream (str name " " msg " " bloat "\n")
                                                      {:close? (= msg (- num 1))})
-                                       (Thread/sleep 70)
-                                       )))})))
+                                       (Thread/sleep 70))))})))
 
 (defn- run-async-fragment [name num]
-  (web/run (async-fragment name num) :host "localhost" :port 8083 :path (str "/" name)))
+  (web/run (async-fragment name num) :host localhost :port 8083 :path (str "/" name)))
 
 (defn- fragment [name]
   (fn [request]
@@ -34,13 +35,11 @@
   (error-fragment request))
 
 (defn- run-fragment [name]
-  (web/run (fragment name) :host "localhost" :port 8083 :path (str "/" name)))
-
-
+  (web/run (fragment name) :host localhost :port 8083 :path (str "/" name)))
 
 (defn start-fragments []
-  (web/run error-fragment :host "localhost" :port 8083 :path (str "/error"))
-  (web/run error-sleep-fragment :host "localhost" :port 8083 :path (str "/error-sleep"))
+  (web/run error-fragment :host localhost :port 8083 :path (str "/error"))
+  (web/run error-sleep-fragment :host localhost :port 8083 :path (str "/error-sleep"))
   (run-async-fragment "async-fragment-1" 10)
   (run-async-fragment "async-fragment-2" 15)
   (run-async-fragment "async-fragment-3" 20)

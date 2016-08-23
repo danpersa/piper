@@ -1,10 +1,7 @@
 (ns piper.core
-  (:require
-    [piper.fragments :as fragments])
   (:gen-class))
 
 (defn -main
-  "Start the fragments"
+  "Start the piper"
   [& args]
-  (println "Starting the fragments")
-  (fragments/start-fragments))
+  )
