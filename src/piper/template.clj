@@ -99,12 +99,3 @@
                               :else (assoc result :fragments (conj (result :fragments) fragment-node)))]
         (recur (rest nodes) new-result))
       result)))
-
-
-(comment
-
-  (select-primary (fragment-nodes (parse-template template)))
-
-
-  (render-channels (ast-to-channels (parse-template template))))
-
