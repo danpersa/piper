@@ -20,9 +20,9 @@ FIXME: listing of options this app accepts.
 
 ...
 
-### Bugs
+### Development
 
-...
+`lein test-refresh` to start the test watcher
 
 ## Links
 

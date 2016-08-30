@@ -20,10 +20,16 @@
              :dev {:source-paths ["dev"]
                    :resource-paths ["test/resources"]
                    :plugins      [[lein-midje                           "3.2"]
-                                  [org.clojars.punkisdead/lein-cucumber "1.0.7"]]
+                                  [org.clojars.punkisdead/lein-cucumber "1.0.7"]
+                                  [com.jakemccrary/lein-test-refresh    "0.16.0"]]
                    :dependencies [[org.clojure/tools.namespace "0.2.11"]
                                   [org.clojure/java.classpath  "0.2.3"]
                                   [criterium                   "0.4.4"]
                                   [midje                       "1.9.0-alpha4"]
                                   [info.cukes/cucumber-clojure "1.2.4"]
-                                  [clj-http                    "2.2.0"]]}})
+                                  [clj-http                    "2.2.0"]]
+                   :test-refresh {:growl true
+                                  :notify-on-success true
+                                  :changes-only true
+                                  :watch-dirs ["src" "test"]
+                                  :refresh-dirs ["src" "test"]}}})
