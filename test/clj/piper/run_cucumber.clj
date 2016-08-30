@@ -1,4 +1,4 @@
-(ns calculator.core-test
+(ns piper.run-cucumber
   (:require [clojure.test :refer [deftest]])
   (:import (cucumber.api.cli Main)))
 
