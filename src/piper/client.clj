@@ -42,6 +42,7 @@
   (let [status-chan (async/chan 5)
         headers-chan (async/chan 5)
         body-chan (async/chan 1024)]
+    (log/info "Start request to url:" url)
     (let [request (req/prepare-request :get url)]
       (log/info "Start request")
       (req/execute-request client request

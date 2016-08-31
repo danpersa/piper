@@ -5,7 +5,7 @@
 
 (def world (atom {:result ""}))
 
-(Given #"^Some fragments$" []
+(Given #"^some fragments$" []
        (fragments/start-fragments))
 
 (When #"^I check if the fragments are started$" []

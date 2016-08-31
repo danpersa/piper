@@ -4,6 +4,6 @@ Feature: Fragments
   So that I can provide features for the customers
 
   Scenario: Start the fragments
-    Given Some fragments
+    Given some fragments
     When I check if the fragments are started
     Then they should be started
