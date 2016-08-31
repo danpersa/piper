@@ -30,6 +30,9 @@
 (Given #"^a piper app with a primary fragment which returns (\d+)$" [arg1]
        (init-piper "templates/primary-500.html"))
 
+(Given #"^a piper app with a primary fragment which returns a timeout$" []
+       (init-piper "templates/primary-timeout.html"))
+
 (Then #"^I should get an error$" []
       (fact
-        (@world :result) => "There was a 500 from primary"))
+        (@world :result) => "There was a timeout or 500 from primary"))

@@ -19,11 +19,20 @@
     (async/>!! body-chan (convert baos "UTF-8"))
     [baos :continue]))
 
-(defn body-completed [hi-chan]
+(defn error-collect [body-chan status-chan headers-chan]
+
+  (fn [_ err]
+    (log/error err "error completed")
+    (async/close! status-chan)
+    (async/close! headers-chan)
+    (async/close! body-chan)
+    err))
+
+(defn body-completed [body-chan]
 
   (fn [_]
     (log/info "Body completed")
-    (async/close! hi-chan)
+    (async/close! body-chan)
     [true :continue]))
 
 (defn status-collect [status-chan]
@@ -39,21 +48,24 @@
     (>!! headers-chan headers)
     [headers (if-not headers :abort)]))
 
-(defn async-request [url]
+(defn async-request [url & {:keys [timeout]}]
   (let [status-chan (async/chan 5)
         headers-chan (async/chan 5)
         body-chan (async/chan 1024)]
     (log/info "Start request to url:" url)
-    (let [request (req/prepare-request :get url)]
+    (let [request (req/prepare-request :get url
+                                       ;TODO make default timeout configurable
+                                       :timeout (or timeout 2000))]
       (log/info "Start request")
       (req/execute-request client request
                            :status (status-collect status-chan)
                            :headers (headers-collect headers-chan)
                            :part (body-collect body-chan)
-                           :completed (body-completed body-chan)))
+                           :completed (body-completed body-chan)
+                           :error (error-collect body-chan status-chan headers-chan)))
     {:status-chan status-chan :headers-chan headers-chan :body-chan body-chan}))
 
-(defn fragments->id-to-chan
+(defn- fragments->id-to-chan
   "Gets a list of fragments. Calls the fragments.
    Returns a map from the fragment id to the go chan where the body of the fragment will get into"
   [fragments]
@@ -63,6 +75,11 @@
                 (:body-chan (async-request (:src fragment)))})
              fragments)))
 
+(defn- convert-to-int [s]
+  (if (nil? s)
+    nil
+    (Integer. s)))
+
 (defun call-fragments
        "Calls the primary fragment and the other fragments.
         In case of a 200 from the primary fragment, we return a list of channels."
@@ -71,9 +88,10 @@
            fragment-channels))
        ([{:primary primary :fragments fragments}]
 
+         (log/error "primary timeout: " primary " " (:timeout primary))
 
-
-         (let [{:keys [status-chan headers-chan body-chan]} (async-request (:src primary))
+         (let [{:keys [status-chan headers-chan body-chan]} (async-request (:src primary)
+                                                                           :timeout (convert-to-int (:timeout primary)))
                fragment-channels (fragments->id-to-chan fragments)]
 
            (let [primary-status (async/<!! status-chan)]
