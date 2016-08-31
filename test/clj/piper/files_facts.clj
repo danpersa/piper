@@ -10,7 +10,7 @@
                   "<body>"
                   "<div>Hello</div>"
                   "<fragment src=\"http://localhost:8083/fragment-1\"></fragment>"
-                  "<slot name=\"body-start\"></slot>"
+                  "<div>Hello1</div>"
                   "<fragment src=\"http://localhost:8083/fragment-2\" primary></fragment>"
                   "</body>"
                   "</html>"]))

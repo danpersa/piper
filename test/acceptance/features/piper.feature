@@ -26,3 +26,9 @@ Feature: Piper
     And a piper app with a primary fragment which returns a timeout
     When I do a request to the piper app
     Then I should get an error
+
+  Scenario: Handles timeout from a fragment
+    Given some fragments
+    And a piper app with a fragment which returns a timeout
+    When I do a request to the piper app
+    Then the timed out fragment content should not be included

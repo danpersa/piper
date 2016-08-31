@@ -55,7 +55,7 @@
     (log/info "Start request to url:" url)
     (let [request (req/prepare-request :get url
                                        ;TODO make default timeout configurable
-                                       :timeout (or timeout 2000))]
+                                       :timeout (or timeout 3000))]
       (log/info "Start request")
       (req/execute-request client request
                            :status (status-collect status-chan)
@@ -65,6 +65,11 @@
                            :error (error-collect body-chan status-chan headers-chan)))
     {:status-chan status-chan :headers-chan headers-chan :body-chan body-chan}))
 
+(defn- convert-to-int [s]
+  (if (nil? s)
+    nil
+    (Integer. s)))
+
 (defn- fragments->id-to-chan
   "Gets a list of fragments. Calls the fragments.
    Returns a map from the fragment id to the go chan where the body of the fragment will get into"
@@ -72,13 +77,9 @@
   (into {}
         (map (fn [fragment]
                {(:id fragment)
-                (:body-chan (async-request (:src fragment)))})
+                (:body-chan (async-request (:src fragment)
+                                           :timeout (convert-to-int (:timeout fragment))))})
              fragments)))
-
-(defn- convert-to-int [s]
-  (if (nil? s)
-    nil
-    (Integer. s)))
 
 (defun call-fragments
        "Calls the primary fragment and the other fragments.

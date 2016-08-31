@@ -29,9 +29,7 @@
 
 (def ^:private ast [{:text "<html>\n<body>\n<div>Hello</div>\n"}
                     {:fragment {:src "http://localhost:8083/fragment-1" :id 1}}
-                    {:text "\n"}
-                    {:slot {:name "body-start"}}
-                    {:text "\n"}
+                    {:text "\n<div>Hello1</div>\n"}
                     {:fragment {:src "http://localhost:8083/fragment-2" :primary nil :id 2}}
                     {:text "\n</body>\n</html>"}])
 
