@@ -16,6 +16,9 @@
 (Given #"^a default piper app$" []
        (init-piper "templates/simple-template.html"))
 
+(Given #"^a piper app without a primary fragment$" []
+       (init-piper "templates/no-primary.html"))
+
 (When #"^I do a request to the piper app$" []
       (let [response (client/get "http://localhost:8081/piper" {:throw-exceptions false})]
         (reset! world {:result (str (response :body))})))
@@ -23,7 +26,6 @@
 (Then #"^I should get the correct html page$" []
       (fact
         (@world :result) => "<html>\n<body>\n<div>Hello</div>\nHello world and fragment-1\n\nXXXX\nHello world and fragment-2\n\n</body>\n</html>"))
-
 
 (Given #"^a piper app with a primary fragment which returns (\d+)$" [arg1]
        (init-piper "templates/primary-500.html"))

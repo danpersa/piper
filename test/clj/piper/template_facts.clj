@@ -60,10 +60,18 @@
 (def ^:private primary-fragments [{:fragment {:id 1 :src "http://localhost:8083/fragment-1"}}
                                   {:fragment {:id 2 :primary nil :src "http://localhost:8083/fragment-2"}}])
 
+(def ^:private no-primary-fragments [{:fragment {:id 1 :src "http://localhost:8083/fragment-1"}}
+                                     {:fragment {:id 2 :src "http://localhost:8083/fragment-2"}}])
+
 (facts "fragment-nodes"
        (fragment-nodes ast) => primary-fragments)
 
 (facts "select-primary"
-       (select-primary primary-fragments) =>
-       {:primary   {:id 2 :primary nil :src "http://localhost:8083/fragment-2"}
-        :fragments [{:id 1 :src "http://localhost:8083/fragment-1"}]})
+       (fact "when primary is present"
+             (select-primary primary-fragments) =>
+             {:primary   {:id 2 :primary nil :src "http://localhost:8083/fragment-2"}
+              :fragments [{:id 1 :src "http://localhost:8083/fragment-1"}]})
+       (fact "when primary is not present"
+             (select-primary no-primary-fragments) =>
+             {:fragments [{:id 1 :src "http://localhost:8083/fragment-1"}
+                          {:id 2 :src "http://localhost:8083/fragment-2"}]}))

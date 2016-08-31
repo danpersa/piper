@@ -2,7 +2,8 @@
   (:require [http.async.client :as ac]
             [clojure.core.async :as async :refer [>!! <!! >! go]]
             [http.async.client.request :as req]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [defun :refer :all])
   (:import (java.io ByteArrayOutputStream)))
 
 
@@ -52,24 +53,36 @@
                            :completed (body-completed body-chan)))
     {:status-chan status-chan :headers-chan headers-chan :body-chan body-chan}))
 
-(defn call-fragments
-  "Calls the primary fragment and the other fragments.
-   In case of a 200 from the primary fragment, we return a list of channels."
-  [{:keys [primary fragments]}]
-  (let [{:keys [status-chan headers-chan body-chan]} (async-request (:src primary))
-        fragment-channels (into {}
-                                (map (fn [fragment]
-                                       {(:id fragment)
-                                        (:body-chan (async-request (:src fragment)))})
-                                     fragments))]
+(defn fragments->id-to-chan
+  "Gets a list of fragments. Calls the fragments.
+   Returns a map from the fragment id to the go chan where the body of the fragment will get into"
+  [fragments]
+  (into {}
+        (map (fn [fragment]
+               {(:id fragment)
+                (:body-chan (async-request (:src fragment)))})
+             fragments)))
 
-    (let [primary-status (async/<!! status-chan)]
-      (log/info "Primary status" primary-status)
-      (if (= 200 primary-status)
-        (assoc fragment-channels (:id primary) body-chan)
-        (do
-          (log/error "Primary fragment returned 500")
-          nil)))))
+(defun call-fragments
+       "Calls the primary fragment and the other fragments.
+        In case of a 200 from the primary fragment, we return a list of channels."
+       ([({:fragments fragments} :only [:fragments])]
+         (let [fragment-channels (fragments->id-to-chan fragments)]
+           fragment-channels))
+       ([{:primary primary :fragments fragments}]
+
+
+
+         (let [{:keys [status-chan headers-chan body-chan]} (async-request (:src primary))
+               fragment-channels (fragments->id-to-chan fragments)]
+
+           (let [primary-status (async/<!! status-chan)]
+             (log/info "Primary status" primary-status)
+             (if (= 200 primary-status)
+               (assoc fragment-channels (:id primary) body-chan)
+               (do
+                 (log/error "Primary fragment returned 500")
+                 nil))))))
 
 (comment
   (async-request "http://localhost:8083/async-fragment-1")

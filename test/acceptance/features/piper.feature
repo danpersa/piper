@@ -9,6 +9,12 @@ Feature: Piper
     When I do a request to the piper app
     Then I should get the correct html page
 
+  Scenario: Puts together a simple template without a primary fragment
+    Given some fragments
+    And a piper app without a primary fragment
+    When I do a request to the piper app
+    Then I should get the correct html page
+
   Scenario: Handles 500 from the primary fragment
     Given some fragments
     And a piper app with a primary fragment which returns 500
