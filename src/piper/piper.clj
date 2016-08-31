@@ -98,6 +98,6 @@
   (web/run (piper-app template)
            :host "localhost" :port 8081 :path (str "/template-2")))
 
-(let [template (fs/classpath-file-as-str "template-500.html")]
+(let [template (fs/classpath-file-as-str "primary-500.html")]
   (web/run (piper-app template)
            :host "localhost" :port 8081 :path (str "/template-500")))

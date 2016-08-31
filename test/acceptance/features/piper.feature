@@ -3,8 +3,14 @@ Feature: Piper
   I want to have Piper
   So that I can deliver pages to customers
 
-  Scenario: Start the Piper
+  Scenario: Puts together a simple template
     Given some fragments
     And a default piper app
-    When I do a request for the default template
+    When I do a request to the piper app
     Then I should get the correct html page
+
+  Scenario: Handles 500 from the primary fragment
+    Given some fragments
+    And a piper app with a primary fragment which returns 500
+    When I do a request to the piper app
+    Then I should get an error
