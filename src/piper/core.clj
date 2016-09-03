@@ -3,5 +3,4 @@
 
 (defn -main
   "Start the piper"
-  [& args]
-  )
+  [& args])
