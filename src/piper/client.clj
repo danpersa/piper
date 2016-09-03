@@ -1,68 +1,24 @@
 (ns piper.client
-  (:require [http.async.client :as ac]
-            [clojure.core.async :as async :refer [>!! <!! >! go]]
-            [http.async.client.request :as req]
+  (:require [clojure.core.async :as async :refer [>!! <!! >! go]]
             [clojure.tools.logging :as log]
-            [defun :refer :all])
-  (:import (java.io ByteArrayOutputStream)))
-
-
-(def client (ac/create-client))
-
-(defn- convert [#^ByteArrayOutputStream baos enc]
-  (.toString baos #^String enc))
-
-(defn body-collect [body-chan]
-
-  (fn [state baos]
-    ;(log/info "Got a part " baos)
-    (async/>!! body-chan (convert baos "UTF-8"))
-    [baos :continue]))
-
-(defn error-collect [body-chan status-chan headers-chan]
-
-  (fn [_ err]
-    (log/error err "error completed")
-    (async/close! status-chan)
-    (async/close! headers-chan)
-    (async/close! body-chan)
-    err))
-
-(defn body-completed [body-chan]
-
-  (fn [_]
-    (log/info "Body completed")
-    (async/close! body-chan)
-    [true :continue]))
-
-(defn status-collect [status-chan]
-
-  (fn [_ status]
-    (log/info "Status  collect" (:code status))
-    (>!! status-chan (:code status))
-    [status :continue]))
-
-(defn headers-collect [headers-chan]
-  (fn [_ headers]
-    (log/info "Headers collect" (:keys headers))
-    (>!! headers-chan headers)
-    [headers (if-not headers :abort)]))
+            [defun :refer :all]
+            [core.async.http.client :as http]))
 
 (defn async-request [url & {:keys [timeout]}]
-  (let [status-chan (async/chan 5)
-        headers-chan (async/chan 5)
-        body-chan (async/chan 1024)]
+  (let [status-chan (async/chan 1)
+        headers-chan (async/chan 1)
+        body-chan (async/chan 1024)
+        ; TODO handle the error
+        error-chan (async/chan 1)]
     (log/info "Start request to url:" url)
-    (let [request (req/prepare-request :get url
-                                       ;TODO make default timeout configurable
-                                       :timeout (or timeout 3000))]
-      (log/info "Start request")
-      (req/execute-request client request
-                           :status (status-collect status-chan)
-                           :headers (headers-collect headers-chan)
-                           :part (body-collect body-chan)
-                           :completed (body-completed body-chan)
-                           :error (error-collect body-chan status-chan headers-chan)))
+    (http/get url
+              :status-chan status-chan
+              :headers-chan headers-chan
+              :body-chan body-chan
+              :error-chan error-chan
+              ; TODO make default timeout configurable
+              :timeout (or timeout 3000))
+
     {:status-chan status-chan :headers-chan headers-chan :body-chan body-chan}))
 
 (defn- convert-to-int [s]
@@ -91,8 +47,10 @@
 
          (log/error "primary timeout: " primary " " (:timeout primary))
 
-         (let [{:keys [status-chan headers-chan body-chan]} (async-request (:src primary)
-                                                                           :timeout (convert-to-int (:timeout primary)))
+         ; TODO handle headers
+         (let [{:keys [status-chan headers-chan body-chan]}
+               (async-request (:src primary)
+                              :timeout (convert-to-int (:timeout primary)))
                fragment-channels (fragments->id-to-chan fragments)]
 
            (let [primary-status (async/<!! status-chan)]
@@ -104,6 +62,7 @@
                  nil))))))
 
 (comment
+  (http/sync-get "http://localhost:8083/fragment-1")
   (async-request "http://localhost:8083/async-fragment-1")
   (call-fragments {:primary   {:id 1 :src "http://localhost:8083/async-fragment-1"}
                    :fragments [{:id 2 :src "http://localhost:8083/fragment-1"}]})
