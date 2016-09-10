@@ -4,6 +4,11 @@
 
 (defn value [] @the-world)
 
+(defn response [] (@the-world :response))
+
+(defn response-body []
+  (str ((@the-world :response) :body)))
+
 (defn reset-world!
   ([] (reset! the-world {:result nil}))
   ([newval]

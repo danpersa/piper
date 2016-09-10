@@ -21,7 +21,7 @@
 
 (When #"^I do a request to the piper app$" []
       (let [response (http/sync-get "http://localhost:8081/piper")]
-        (world/reset-world! {:result (str (response :body))})))
+        (world/reset-world! {:response response})))
 
 (Then #"^I should get the correct html page$" []
 
@@ -39,13 +39,13 @@
                        "</html>"])]
         (assert
           (= expected-result
-             ((world/value) :result)))))
+             (world/response-body)))))
 
 (Then #"^I should get an error$" []
       (assert
         (=
           "There was a timeout or 500 from primary"
-          ((world/value) :result))))
+          (world/response-body))))
 
 (Then #"^the timed out fragment content should not be included$" []
       (let [expected-result
@@ -61,8 +61,7 @@
                        "</html>"])]
         (assert
           (= expected-result
-             ((world/value) :result)))))
+             (world/response-body)))))
 
 (Then #"^I should get the body \"([^\"]*)\"$" [expected-body]
-      (let [result-body ((world/value) :result)]
-        (assert (= expected-body result-body))))
+      (assert (= expected-body (world/response-body))))

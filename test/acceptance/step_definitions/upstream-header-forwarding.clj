@@ -10,7 +10,4 @@
 
       (let [response (http/sync-get "http://localhost:8081/piper"
                                     :headers {header-name header-value})]
-        (world/reset-world! {:result (str (response :body))})))
-
-(Then #"^I should get the \"([^\"]*)\" header as a response$" [arg1]
-      (println "Result: " ((world/value) :result)))
+        (world/reset-world! {:response response})))
