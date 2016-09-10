@@ -8,5 +8,7 @@ Feature: Upstream Header Forwarding
 
   Scenario: Forwards the headers it gets from upstream to fragments
     Given a piper app with a fragment which returns the x-headers it gets
-    When I do a request to the piper app with the header name "x-some" and value "hello"
-    Then I should get the body "<html><div>x-some: hello</div></html>"
+    And I prepare the header with name "x-header-1" and value "value-1"
+    And I prepare the header with name "x-header-2" and values "value-2" and "value-3"
+    When I do a request to the piper app
+    Then I should get the body "<html><div>x-header-1: value-1</div><div>x-header-2: value-2,value-3</div></html>"

@@ -20,7 +20,9 @@
        (init-piper "templates/fragment-timeout.html"))
 
 (When #"^I do a request to the piper app$" []
-      (let [response (http/sync-get "http://localhost:8081/piper")]
+      (let [prepared-headers ((world/value) :prepared-headers)
+            response (http/sync-get "http://localhost:8081/piper"
+                                    :headers prepared-headers)]
         (world/reset-world! {:response response})))
 
 (Then #"^I should get the correct html page$" []
@@ -64,4 +66,5 @@
              (world/response-body)))))
 
 (Then #"^I should get the body \"([^\"]*)\"$" [expected-body]
+      (println "Body: " (world/response-body))
       (assert (= expected-body (world/response-body))))

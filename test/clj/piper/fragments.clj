@@ -47,7 +47,7 @@
    :body    (->> (seq (:headers request))
                  (filter (fn [[key _]] (.startsWith key "x-")))
                  (map (fn [[key value]] (str "<div>" key ": " value "</div>")))
-                 (str/join "\n"))})
+                 (str/join))})
 
 (defn- run-fragment [name]
   (web/run (fragment name) :host localhost :port 8083 :path (str "/" name)))
