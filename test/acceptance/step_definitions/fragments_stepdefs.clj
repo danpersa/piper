@@ -2,6 +2,7 @@
 (use '[piper.fragments :as fragments])
 (use '[core.async.http.client :as http])
 (use '[world :as world])
+(use '[speclj.core :refer :all])
 
 (Given #"^some fragments$" []
        (fragments/start-fragments))
@@ -11,5 +12,5 @@
         (world/reset-world! {:response response})))
 
 (Then #"^they should be started$" []
-      (assert (= "Hello world and fragment-1\n"
-                 (world/response-body))))
+      (should= "Hello world and fragment-1\n"
+               (world/response-body)))

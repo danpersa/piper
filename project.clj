@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure        "1.9.0-alpha10"]
+  :dependencies [[org.clojure/clojure        "1.9.0-alpha11"]
                  [org.clojure/core.async     "0.2.385"]
                  [org.immutant/web           "2.1.5"]
                  [instaparse                 "1.4.2"]
@@ -20,10 +20,12 @@
                    :resource-paths ["test/resources"]
                    :plugins      [[lein-midje                           "3.2"]
                                   [org.clojars.punkisdead/lein-cucumber "1.0.7"]
-                                  [com.jakemccrary/lein-test-refresh    "0.16.0"]]
-                   :dependencies [[midje                       "1.9.0-alpha4"]
-                                  [info.cukes/cucumber-clojure "1.2.4"]
-                                  [org.clojure/data.json       "0.2.6"]]
+                                  [com.jakemccrary/lein-test-refresh    "0.16.0"]
+                                  [speclj                               "3.3.2"]]
+                   :dependencies [[midje                         "1.9.0-alpha5"]
+                                  [info.cukes/cucumber-clojure   "1.2.4"]
+                                  [org.clojure/data.json         "0.2.6"]
+                                  [speclj                        "3.3.2"]]
                    :test-refresh {:growl true
                                   :notify-on-success true
                                   :changes-only true

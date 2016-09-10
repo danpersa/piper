@@ -3,6 +3,7 @@
 (use '[core.async.http.client :as http])
 (use '[feature-utils :refer :all])
 (use '[world :as world])
+(use '[speclj.core :refer :all])
 
 (Given #"^a default piper app$" []
        (init-piper "templates/simple-template.html"))
@@ -39,15 +40,12 @@
                        ""
                        "</body>"
                        "</html>"])]
-        (assert
-          (= expected-result
-             (world/response-body)))))
+        (should= expected-result
+                 (world/response-body))))
 
 (Then #"^I should get an error$" []
-      (assert
-        (=
-          "There was a timeout or 500 from primary"
-          (world/response-body))))
+      (should= "There was a timeout or 500 from primary"
+               (world/response-body)))
 
 (Then #"^the timed out fragment content should not be included$" []
       (let [expected-result
@@ -61,10 +59,7 @@
                        ""
                        "</body>"
                        "</html>"])]
-        (assert
-          (= expected-result
-             (world/response-body)))))
+        (should= expected-result (world/response-body))))
 
 (Then #"^I should get the body \"([^\"]*)\"$" [expected-body]
-      (println "Body: " (world/response-body))
-      (assert (= expected-body (world/response-body))))
+      (should= expected-body (world/response-body)))
