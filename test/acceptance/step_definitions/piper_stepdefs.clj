@@ -2,8 +2,7 @@
 (use '[clojure.string :as str])
 (use '[core.async.http.client :as http])
 (use '[feature-utils :refer :all])
-
-(def world (atom {:result ""}))
+(use '[world :as world])
 
 (Given #"^a default piper app$" []
        (init-piper "templates/simple-template.html"))
@@ -22,7 +21,7 @@
 
 (When #"^I do a request to the piper app$" []
       (let [response (http/sync-get "http://localhost:8081/piper")]
-        (reset! world {:result (str (response :body))})))
+        (world/reset-world! {:result (str (response :body))})))
 
 (Then #"^I should get the correct html page$" []
 
@@ -40,13 +39,13 @@
                        "</html>"])]
         (assert
           (= expected-result
-             (@world :result)))))
+             ((world/value) :result)))))
 
 (Then #"^I should get an error$" []
       (assert
         (=
           "There was a timeout or 500 from primary"
-          (@world :result))))
+          ((world/value) :result))))
 
 (Then #"^the timed out fragment content should not be included$" []
       (let [expected-result
@@ -62,8 +61,8 @@
                        "</html>"])]
         (assert
           (= expected-result
-             (@world :result)))))
+             ((world/value) :result)))))
 
 (Then #"^I should get the body \"([^\"]*)\"$" [expected-body]
-      (let [result-body (@world :result)]
+      (let [result-body ((world/value) :result)]
         (assert (= expected-body result-body))))
