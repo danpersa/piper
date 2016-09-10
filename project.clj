@@ -6,7 +6,6 @@
   :dependencies [[org.clojure/clojure        "1.9.0-alpha10"]
                  [org.clojure/core.async     "0.2.385"]
                  [org.immutant/web           "2.1.5"]
-                 [clj-http                   "3.1.0"]
                  [instaparse                 "1.4.2"]
                  [org.clojure/core.match     "0.3.0-alpha4"]
                  [defun                      "0.3.0-alapha"]
@@ -22,12 +21,9 @@
                    :plugins      [[lein-midje                           "3.2"]
                                   [org.clojars.punkisdead/lein-cucumber "1.0.7"]
                                   [com.jakemccrary/lein-test-refresh    "0.16.0"]]
-                   :dependencies [[org.clojure/tools.namespace "0.2.11"]
-                                  [org.clojure/java.classpath  "0.2.3"]
-                                  [criterium                   "0.4.4"]
-                                  [midje                       "1.9.0-alpha4"]
+                   :dependencies [[midje                       "1.9.0-alpha4"]
                                   [info.cukes/cucumber-clojure "1.2.4"]
-                                  [clj-http                    "3.1.0"]]
+                                  [org.clojure/data.json       "0.2.6"]]
                    :test-refresh {:growl true
                                   :notify-on-success true
                                   :changes-only true
