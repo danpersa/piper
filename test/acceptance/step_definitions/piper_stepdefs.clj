@@ -1,18 +1,9 @@
 (use 'piper.core)                                           ;; yes, no namespace declaration
-(use '[piper.piper :as piper])
-(use '[piper.files :as fs])
-(use '[clj-http.client :as client])
-(use '[midje.sweet :refer :all])
-(use '[immutant.web :as web])
 (use '[clojure.string :as str])
-
-(def world (atom {:result ""}))
-
-(defn init-piper [template-path]
-  (-> template-path
-      fs/classpath-file-as-str
-      piper/piper-app
-      (web/run :host "localhost" :port 8081 :path (str "/piper"))))
+(use '[core.async.http.client :as http])
+(use '[feature-utils :refer :all])
+(use '[world :as world])
+(use '[speclj.core :refer :all])
 
 (Given #"^a default piper app$" []
        (init-piper "templates/simple-template.html"))
@@ -30,38 +21,45 @@
        (init-piper "templates/fragment-timeout.html"))
 
 (When #"^I do a request to the piper app$" []
-      (let [response (client/get "http://localhost:8081/piper" {:throw-exceptions false})]
-        (reset! world {:result (str (response :body))})))
+      (let [prepared-headers ((world/value) :prepared-headers)
+            response (http/sync-get "http://localhost:8081/piper"
+                                    :headers prepared-headers)]
+        (world/reset-world! {:response response})))
 
 (Then #"^I should get the correct html page$" []
-      (fact
-        (@world :result) =>
-        (str/join "\n"
-                  ["<html>"
-                   "<body>"
-                   "<div>Hello</div>"
-                   "Hello world and fragment-1"
-                   ""
-                   "<div>Hello1</div>"
-                   "Hello world and fragment-2"
-                   ""
-                   "</body>"
-                   "</html>"])))
+
+      (let [expected-result
+            (str/join "\n"
+                      ["<html>"
+                       "<body>"
+                       "<div>Hello</div>"
+                       "Hello world and fragment-1"
+                       ""
+                       "<div>Hello1</div>"
+                       "Hello world and fragment-2"
+                       ""
+                       "</body>"
+                       "</html>"])]
+        (should= expected-result
+                 (world/response-body))))
 
 (Then #"^I should get an error$" []
-      (fact
-        (@world :result) => "There was a timeout or 500 from primary"))
+      (should= "There was a timeout or 500 from primary"
+               (world/response-body)))
 
 (Then #"^the timed out fragment content should not be included$" []
-      (fact
-        (@world :result) =>
-        (str/join "\n"
-                  ["<html>"
-                   "<body>"
-                   "<div>Hello</div>"
-                   ""
-                   "<div>Hello1</div>"
-                   "Hello world and fragment-1"
-                   ""
-                   "</body>"
-                   "</html>"])))
+      (let [expected-result
+            (str/join "\n"
+                      ["<html>"
+                       "<body>"
+                       "<div>Hello</div>"
+                       ""
+                       "<div>Hello1</div>"
+                       "Hello world and fragment-1"
+                       ""
+                       "</body>"
+                       "</html>"])]
+        (should= expected-result (world/response-body))))
+
+(Then #"^I should get the body \"([^\"]*)\"$" [expected-body]
+      (should= expected-body (world/response-body)))

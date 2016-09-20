@@ -12,29 +12,30 @@
   (let [parsed-template (tp/parse-template template)
         primary-fragments (tp/select-primary (tp/fragment-nodes parsed-template))]
 
-
     (fn [request]
-      (if-some [fragment-chans (cl/call-fragments primary-fragments)]
-        (let [out-chan (async/chan 4096)]
-          (iasync/as-channel request
-                             {:on-open (fn [stream]
-                                         (let [ast-chans (ch/ast-to-channels parsed-template fragment-chans)]
+      (let [headers (request :headers)]
+        (if-some [fragment-chans (cl/call-fragments primary-fragments headers)]
+          (let [out-chan (async/chan 4096)]
+            (iasync/as-channel
+              request
+              {:on-open
+               (fn [stream]
+                 (let [ast-chans (ch/ast-to-channels parsed-template fragment-chans)]
 
-                                           (ch/concat-chans ast-chans out-chan)
-                                           (loop [chunk (async/<!! out-chan)]
-                                             (if-some [next-chunk (async/<!! out-chan)]
-                                               (do
-                                                 (iasync/send! stream chunk)
-                                                 (recur next-chunk))
-                                               (iasync/send! stream chunk {:close? true})))))}))
-        {:status 500
-         :body   "There was a timeout or 500 from primary"}))))
+                   (ch/concat-chans ast-chans out-chan)
+                   (loop [chunk (async/<!! out-chan)]
+                     (if-some [next-chunk (async/<!! out-chan)]
+                       (do
+                         (iasync/send! stream chunk)
+                         (recur next-chunk))
+                       (iasync/send! stream chunk {:close? true})))))}))
+          {:status 500
+           :body   "There was a timeout or 500 from primary"})))))
 
 (comment
   (let [template (fs/classpath-file-as-str "template-1.html")]
     (web/run (piper-app template)
              :host "localhost" :port 8081 :path (str "/template-1")))
-
 
   (let [template (fs/classpath-file-as-str "template-2.html")]
     (web/run (piper-app template)
