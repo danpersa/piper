@@ -28,6 +28,15 @@ FIXME: listing of options this app accepts.
 
     https://github.com/gphilipp/bdd-guide-clojure
 
+## Run Cucumber from IntelliJ
+```
+Main Class: cucumber.api.cli.Main
+Glue: test/acceptance/step_definitions
+Feature Folder: .... piper/test/acceptance/features (Use full path)
+VM Options: -Xbootclasspath/p:test/acceptance/step_definitions:src:test/clj:test/resources
+Program Arguments: "--plugin" "pretty"
+```
+
 ## License
 
 Copyright © 2016 FIXME

@@ -1,8 +1,8 @@
 (defproject piper "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url  "http://www.eclipse.org/legal/epl-v10.html"}
+  :url "https://github.com/danpersa/piper"
+  :license {:name "MIT License"
+            :url  "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure           "1.9.0-alpha11"]
                  [org.clojure/core.async        "0.2.385"]
                  [org.immutant/web              "2.1.5"]

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest]])
   (:import (cucumber.api.cli Main)))
 
-(deftest run-cukes
+(comment
   (let [classloader (.getContextClassLoader (Thread/currentThread))]
     (. Main (run
               (into-array ["--plugin"
